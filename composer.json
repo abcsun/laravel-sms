@@ -1,5 +1,5 @@
 {
-    "name": "toplan/laravel-sms",
+    "name": "abcsun/laravel-sms",
     "description": "sms send package for laravel",
     "license": "MIT",
     "version": "1.0.1",
@@ -7,8 +7,15 @@
     "authors": [
         {
             "name": "toplan",
-            "email": "toplan710@gmail.com"
-        }
+            "email": "toplan710@gmail.com",
+            "role": "Original Developer"
+        },
+        {
+    	      "name": "abcsun",
+    	      "email": "chenglongsun_nj@163.com",
+    	      "role": "Developer",
+    	      "homepage": "http://github.com/abcsun"
+    	}
     ],
     "require": {
         "php": ">=5.4.0"
