@@ -2,6 +2,7 @@
 namespace Toplan\Sms;
 
 use \Session;
+use \Cache;
 
 class SmsManager
 {
@@ -79,6 +80,36 @@ class SmsManager
         Session::put($this->getSessionKey(), $data);
     }
 
+    /**
+     * 针对验证类短信，将手机号和生成的验证码组合后进行缓存，用于后期验证
+     * key: phone-code
+     * VC - verfiy code
+     * HS - has sent
+     * @param array $data
+     */
+    public function storeSmsCodeToCache($phone, $code, $minutes)
+    {
+        Cache::put("VC/$code", $phone, $minutes);  //以code为key缓存对应的phone,并设置code有效期
+        Cache::put("HS/$phone", 1, 1);   //以phone为key缓存1分钟，控制发送频率
+    }
+
+    /**
+     * 根据code从缓存中获取手机信息，用于验证码校验
+     * @param  [type] $code [description]
+     * @return  null|string    null-验证码错误/超时, 否则为手机号
+     */
+    public function getCodeFromCache($code){
+        return Cache::get("VC/$code", null); //如果验证码存在，返回接收号码，否则返回0表示错误验证码
+    }
+
+    /**
+     * 可以再次发送给目标phone
+     * @param  [type] $phone 目标手机
+     * @return bool        0-等待60s, 1-可立即发送
+     */
+    public function canSendAgainToPhone($phone){
+        return ! Cache::has("HS/$phone");  //存在时表示前1min内刚发送过，所以返回0表示不能发送
+    }
     /**
      * get sms data from session
      * @return mixed
@@ -181,6 +212,7 @@ class SmsManager
     {
         $agentName = $agentName ?: $this->getDefaultAgent();
         $agentConfig = config('laravel-sms.'.$agentName, null);
+        // var_dump($agentConfig);
         if ($agentConfig && isset($agentConfig['verifySmsTemplateId'])) {
             return $agentConfig['verifySmsTemplateId'];
         }
@@ -356,7 +388,8 @@ class SmsManager
     {
         $key = $this->getSessionKey('_CanSendTime');
         $time = time() + $seconds;
-        Session::put($key, $time);
+        // Session::put($key, $time);
+        Cache::put($key, $time, 600);
         return $time;
     }
 
@@ -367,7 +400,8 @@ class SmsManager
     public function getCanSendTime()
     {
         $key = $this->getSessionKey('_CanSendTime');
-        return Session::get($key, 0);
+        // return Session::get($key, 0);
+        return Cache::get($key, 0);
     }
 
     /**

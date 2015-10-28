@@ -17,11 +17,11 @@ class SmsManagerServiceProvider extends ServiceProvider
 
         //publish migrations
         $this->publishes([
-            __DIR__ . '/../../../migrations/' => database_path('/migrations')
+            __DIR__ . '/../../migrations/' => database_path('/migrations')
         ], 'migrations');
 
         //route file
-        require __DIR__ . '/routes.php';
+        // require __DIR__ . '/routes.php';
 
         //validations file
         require __DIR__ . '/validations.php';

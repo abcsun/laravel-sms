@@ -9,10 +9,11 @@ use Illuminate\Routing\Controller;
 class SmsController extends Controller
 {
     public $smsModel;
-
+    
     public function __construct()
     {
         $this->smsModel = config('laravel-sms.smsModel', 'Toplan/Sms/Sms');
+        $this->smsManger = new SmsManager();
     }
 
     public function postVoiceVerify($rule, $mobile = '')
@@ -52,18 +53,21 @@ class SmsController extends Controller
         return response()->json($vars);
     }
 
+    //发送短信验证码
     public function postSendCode($rule, $mobile = '')
     {
         $vars = [];
         $vars['success'] = false;
         $input = [
             'mobile' => $mobile,
-            'seconds' => Input::get('seconds', 60)
+            'seconds' => 60,//Input::get('seconds', 60)
         ];
-        $verifyResult = $this->verifyData($input, $rule);
+        $verifyResult = $this->checkSendConditionToPhone($mobile);
+
         if (!$verifyResult['passed']) {
-            $vars['type'] = $verifyResult['type'];
-            $vars['msg'] = $verifyResult['msg'];
+            $vars['message'] = $verifyResult['message'];
+            $vars['code'] = $verifyResult['code'];
+            $vars['result'] = $verifyResult['result'];
             return response()->json($vars);
         }
 
@@ -76,6 +80,7 @@ class SmsController extends Controller
         $result   = $sms->template($tempIds)
                          ->to($mobile)
                          ->data(['code' => $code,'minutes' => $minutes])
+                         ->code($code)
                          ->content($content)
                          ->send();
         if ($result) {
@@ -84,23 +89,49 @@ class SmsController extends Controller
             $data['mobile'] = $mobile;
             $data['code'] = $code;
             $data['deadline_time'] = time() + ($minutes * 60);
-            SmsManager::storeSmsDataToSession($data);
-            $vars['success'] = true;
-            $vars['msg'] = '验证码短信发送成功，请注意查收';
-            $vars['type'] = 'sent_success';
-            SmsManager::setCanSendTime($input['seconds']);
+            // SmsManager::storeSmsDataToSession($data);
+            SmsManager::storeSmsCodeToCache($mobile, $code, $minutes);
+            $vars['code'] = 1;
+            $vars['message'] = '发送成功';
+            $vars['result'] = '发送成功';
+            // SmsManager::setCanSendTime($input['seconds']);
         } else {
-            $vars['msg'] = '验证码短信发送失败，请重新获取';
-            $vars['type'] = 'sent_failed';
+            $vars['code'] = 0;
+            $vars['message'] = '发送失败，请重新获取';
+            $vars['result'] = '发送失败，请重新获取';
         }
         return response()->json($vars);
+    }
+
+    public function checkSendConditionToPhone($phone)
+    {
+        $vars = [];
+        $vars['passed'] = true;
+        // var_dump(SmsManager::canSendAgainToPhone($phone));
+        if (!SmsManager::canSendAgainToPhone($phone)) {
+            $vars['passed'] = false;
+            $vars['message'] = "请在60秒后重试";
+            $vars['result'] = "请在60秒后重试";
+            $vars['code'] = '0';
+        }
+        $validator = Validator::make(array('phone'=>$phone), [
+            'phone' => 'required|mobile'
+        ]);
+        if ($validator->fails()) {
+            $vars['passed'] = false;
+            $vars['message'] = '手机号格式错误';
+            $vars['result'] = '手机号格式错误';
+            $vars['code'] = '-1';
+        }
+
+        return $vars;
     }
 
     private function verifyData(Array $input, $rule)
     {
         $vars = [];
         $vars['passed'] = true;
-        if (!SmsManager::canSend()) {
+        if (!SmsManager::canSendAgainToPhone($input['mobile'])) {
             $vars['passed'] = false;
             $vars['msg'] = "请求无效，请在{$input['seconds']}秒后重试";
             $vars['type'] = 'waiting';

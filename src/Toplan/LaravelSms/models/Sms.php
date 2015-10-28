@@ -165,6 +165,18 @@ class Sms extends Model implements Sender
     }
 
     /**
+     * 设置sms表中的code字段
+     * @param $code
+     *
+     * @return $this
+     */
+    public function code($code)
+    {
+        $this->code = $code;
+        return $this;
+    }
+
+    /**
      * 发送短信入口
      * @return bool|mixed
      */
@@ -175,7 +187,7 @@ class Sms extends Model implements Sender
         ], $this->rules);
         if ( ! $validator->fails()) {
             if ( ! $this->created_at) {
-                $this->save();
+                $result = $this->save();
             }
             if ($this->agent->isPushToQueue()) {
                 $data = [
@@ -204,7 +216,7 @@ class Sms extends Model implements Sender
             $result = $this->agent->voiceVerify($this->getTo(), $data['voice_verify_code']);
         } else {
             //sms
-            $result = $this->agent->sms($this->getTemplate(true), $this->getTo(), $this->getData(true), $this->getContent());
+            $result = 1;//$this->agent->sms($this->getTemplate(true), $this->getTo(), $this->getData(true), $this->getContent());
         }
         if ($result['success']) {
             $this->sent_time = time();
