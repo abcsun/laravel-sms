@@ -216,7 +216,7 @@ class Sms extends Model implements Sender
             $result = $this->agent->voiceVerify($this->getTo(), $data['voice_verify_code']);
         } else {
             //sms
-            $result = 1;//$this->agent->sms($this->getTemplate(true), $this->getTo(), $this->getData(true), $this->getContent());
+            $result = $this->agent->sms($this->getTemplate(true), $this->getTo(), $this->getData(true), $this->getContent());
         }
         if ($result['success']) {
             $this->sent_time = time();

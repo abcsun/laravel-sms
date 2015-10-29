@@ -3,7 +3,7 @@ namespace Toplan\Sms;
 
 use Illuminate\Support\ServiceProvider;
 
-class SmsManagerServiceProvider extends ServiceProvider
+class SmsManagerLumenServiceProvider extends ServiceProvider
 {
     /**
      * bootstrap, add routes
@@ -11,17 +11,17 @@ class SmsManagerServiceProvider extends ServiceProvider
     public function boot()
     {
         //publish a config file
-        $this->publishes([
-            __DIR__ . '/../../config/laravel-sms.php' => config_path('laravel-sms.php')
-        ], 'config');
+        // $this->publishes([
+        //     __DIR__ . '/../../config/laravel-sms.php' => config_path('laravel-sms.php')
+        // ], 'config');
 
         // //publish migrations
-        $this->publishes([
-            __DIR__ . '/../../migrations/' => database_path('/migrations')
-        ], 'migrations');
+        // $this->publishes([
+        //     __DIR__ . '/../../migrations/' => database_path('/migrations')
+        // ], 'migrations');
 
         //route file
-        require __DIR__ . '/routes.php';
+        // require __DIR__ . '/routes.php';
 
         //validations file
         require __DIR__ . '/validations.php';

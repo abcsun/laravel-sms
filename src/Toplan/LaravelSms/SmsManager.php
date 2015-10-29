@@ -212,7 +212,6 @@ class SmsManager
     {
         $agentName = $agentName ?: $this->getDefaultAgent();
         $agentConfig = config('laravel-sms.'.$agentName, null);
-        // var_dump($agentConfig);
         if ($agentConfig && isset($agentConfig['verifySmsTemplateId'])) {
             return $agentConfig['verifySmsTemplateId'];
         }
