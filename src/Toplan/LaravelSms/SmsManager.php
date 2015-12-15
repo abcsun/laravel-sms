@@ -82,24 +82,41 @@ class SmsManager
 
     /**
      * 针对验证类短信，将手机号和生成的验证码组合后进行缓存，用于后期验证
-     * key: phone-code
-     * VC - verfiy code
-     * HS - has sent
+     * key: phone.code
      * @param array $data
      */
-    public function storeSmsCodeToCache($phone, $code, $minutes)
+    public function storeSmsCodeToCache($phone, $code)
     {
-        Cache::put("VC/$code", $phone, $minutes);  //以code为key缓存对应的phone,并设置code有效期
-        Cache::put("HS/$phone", 1, 1);   //以phone为key缓存1分钟，控制发送频率
+        $code_cache_prefix = Config('laravel-sms.VERIFY_CODE_CACHE_PREFIX');//'VC:';
+        $resend_cache_prefix = Config('laravel-sms.FORBID_RESEND_CACHE_PREFIX');//'HS:';
+        $ttl_code = Config('laravel-sms.codeValidTime');//
+        $resend_interval = Config('laravel-sms.resendInterval');//
+        Cache::put($code_cache_prefix.$phone.'.'.$code, 1, $ttl_code);  //phone.code为key缓存
+        Cache::put($resend_cache_prefix.$phone, 1, $resend_interval);   //以phone为key缓存1分钟，控制发送频率
     }
 
     /**
-     * 根据code从缓存中获取手机信息，用于验证码校验
-     * @param  [type] $code [description]
-     * @return  null|string    null-验证码错误/超时, 否则为手机号
+     * 增加约束key的值，即实现限制时间内的计数
+     * 如果没有则创建值为1，且初始化该约束的生存周期
+     * @param  [type] $key [description]
+     * @param  [type] $ttl [description]
+     * @return [type]      [description]
      */
-    public function getCodeFromCache($code){
-        return Cache::get("VC/$code", null); //如果验证码存在，返回接收号码，否则返回0表示错误验证码
+    public function incrementKey($key, $ttl){
+        if(!Cache::has($key)){
+            Cache::add($key, 1, $ttl);
+        }else{
+            Cache::increment($key);
+        }    
+    }
+
+    /**
+     * 获取约束key的值
+     * @param  [type] $key [description]
+     * @return [type]      [description]
+     */
+    public function getKey($key){
+        return Cache::get($key);
     }
 
     /**
@@ -108,7 +125,8 @@ class SmsManager
      * @return bool        0-等待60s, 1-可立即发送
      */
     public function canSendAgainToPhone($phone){
-        return ! Cache::has("HS/$phone");  //存在时表示前1min内刚发送过，所以返回0表示不能发送
+        $resend_cache_prefix = Config('laravel-sms.FORBID_RESEND_CACHE_PREFIX');
+        return ! Cache::has($resend_cache_prefix.$phone);  //存在时表示前1min内刚发送过，所以返回0表示不能发送
     }
     /**
      * get sms data from session

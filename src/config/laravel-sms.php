@@ -85,6 +85,13 @@ return array(
         ]
     ],
 
+    //sms缓存前缀
+    'VERIFY_CODE_CACHE_PREFIX' => 'sms:code:',
+    'FORBID_RESEND_CACHE_PREFIX' => 'sms:resend:',
+    'MAX_TARGET_RECEIVE_CACHE_PREFIX' => 'sms:MTRC:',
+    'MAC_IP_SEND_CACHE_PREFIX' => 'sms:MISC',
+    'MAC_USER_SEND_CACHE_PREFIX' => 'sms:MUSC',
+
     /*
      * -----------------------------------
      * 验证码短信相关配置
@@ -100,6 +107,8 @@ return array(
     // 验证码有效时间长度，单位为分钟(minutes)
     'codeValidTime' => 5,
 
+    //同一手机再次发送间隔，单位为分钟(minutes)
+    'resendInterval' => 1, 
 
     /*
      * -----------------------------------
