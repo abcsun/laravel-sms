@@ -3,6 +3,7 @@ namespace Toplan\Sms;
 
 use \Session;
 use \Cache;
+use Carbon\Carbon;
 
 class SmsManager
 {
@@ -28,7 +29,7 @@ class SmsManager
      * construct
      * @param $app
      */
-	public function __construct($app)
+    public function __construct($app)
     {
         $this->app = $app;
         $this->init();
@@ -91,8 +92,10 @@ class SmsManager
         $resend_cache_prefix = Config('laravel-sms.FORBID_RESEND_CACHE_PREFIX');//'HS:';
         $ttl_code = Config('laravel-sms.codeValidTime');//
         $resend_interval = Config('laravel-sms.resendInterval');//
+        $expiresAt = Carbon::now()->addSeconds($resend_interval);
+
         Cache::put($code_cache_prefix.$phone.'.'.$code, 1, $ttl_code);  //phone.code为key缓存
-        Cache::put($resend_cache_prefix.$phone, 1, $resend_interval);   //以phone为key缓存1分钟，控制发送频率
+        Cache::put($resend_cache_prefix.$phone, 1, $expiresAt);   //以phone为key控制发送频率
     }
 
     /**
@@ -107,7 +110,7 @@ class SmsManager
             Cache::add($key, 1, $ttl);
         }else{
             Cache::increment($key);
-        }    
+        }
     }
 
     /**
